@@ -16,7 +16,8 @@ export default function SavedScreen() {
   async function loadData() {
     try {
       setSaved(JSON.parse(await AsyncStorage.getItem('saved_products') || '[]'));
-      setHistory(JSON.parse(await AsyncStorage.getItem('scan_history') || '[]'));
+      const h = JSON.parse(await AsyncStorage.getItem('scan_history') || '[]');
+      setHistory(h.filter(e => e.prices && e.prices.length > 0));
     } catch (e) {}
   }
 

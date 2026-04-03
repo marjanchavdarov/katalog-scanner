@@ -147,6 +147,6 @@ const styles = StyleSheet.create({
   avatar: { fontSize: 64, marginBottom: 16 },
   phoneText: { fontSize: 22, fontWeight: '700', color: '#1A1A1A' },
   subText: { fontSize: 14, color: '#888', marginTop: 4 },
-  logoutBtn: { margin: 24, padding: 16, borderRadius: 10, borderWidth: 1.5, borderColor: '#E8572A', alignItems: 'center' },
-  logoutText: { color: '#E8572A', fontWeight: '700', fontSize: 16 },
+  logoutBtn: { margin: 24, padding: 16, borderRadius: 10, borderWidth: 1.5, borderColor: '#1A56DB', alignItems: 'center' },
+  logoutText: { color: '#1A56DB', fontWeight: '700', fontSize: 16 },
 });
