@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScannerScreen from './screens/ScannerScreen';
 import SavedScreen from './screens/SavedScreen';
@@ -11,19 +11,22 @@ import { colors } from './theme';
 
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ label, icon, focused }) {
+function TabIcon({ label, emoji, focused }) {
   return (
-    <View style={styles.tabIcon}>
-      <Text style={[styles.tabIconText, focused && styles.tabIconActive]}>{icon}</Text>
+    <View style={[styles.tabItem, focused && styles.tabItemActive]}>
+      <Text style={styles.tabEmoji}>{emoji}</Text>
       <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
     </View>
   );
 }
 
-function ScanTabIcon({ focused }) {
+function ScanButton() {
   return (
-    <View style={styles.scanButton}>
-      <Text style={styles.scanIcon}>📷</Text>
+    <View style={styles.scanWrap}>
+      <View style={styles.scanBtn}>
+        <Text style={styles.scanEmoji}>⊙</Text>
+      </View>
+      <Text style={styles.scanLabel}>Skeniraj</Text>
     </View>
   );
 }
@@ -32,82 +35,78 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  useEffect(() => { checkUser(); }, []);
-
-  async function checkUser() {
-    const u = await AsyncStorage.getItem('user');
-    if (u) setUser(JSON.parse(u));
-    setLoading(false);
-  }
+  useEffect(() => {
+    AsyncStorage.getItem('user').then(u => {
+      if (u) setUser(JSON.parse(u));
+      setLoading(false);
+    });
+  }, []);
 
   if (loading) return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg }}>
-      <ActivityIndicator size="large" color={colors.primary} />
+    <View style={styles.splash}>
+      <Text style={styles.splashLogo}>katalog</Text>
+      <Text style={styles.splashDot}>.ai</Text>
+      <ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} />
     </View>
   );
 
-  if (!user) return <OnboardingScreen onVerified={(u) => setUser(u)} />;
+  if (!user) return <OnboardingScreen onVerified={setUser} />;
 
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={{
-          tabBarStyle: styles.tabBar,
-          tabBarShowLabel: false,
-          headerStyle: { backgroundColor: colors.primary },
-          headerTintColor: '#fff',
-          headerTitleStyle: { fontWeight: '700', fontSize: 18 },
-        }}>
+      <Tab.Navigator screenOptions={{
+        tabBarStyle: styles.tabBar,
+        tabBarShowLabel: false,
+        headerShown: false,
+      }}>
         <Tab.Screen name="Spremljeno" component={SavedScreen}
-          options={{
-            title: 'katalog.ai',
-            tabBarIcon: ({ focused }) => <TabIcon label="Spremljeno" icon="❤️" focused={focused} />
-          }} />
+          options={{ tabBarIcon: ({ focused }) => <TabIcon label="Moji" emoji="❤️" focused={focused} /> }} />
         <Tab.Screen name="Skeniraj" component={ScannerScreen}
-          options={{
-            title: 'katalog.ai',
-            tabBarIcon: ({ focused }) => <ScanTabIcon focused={focused} />
-          }} />
+          options={{ tabBarIcon: () => <ScanButton /> }} />
         <Tab.Screen name="Profil" component={ProfileScreen}
-          options={{
-            title: 'Profil',
-            tabBarIcon: ({ focused }) => <TabIcon label="Profil" icon="👤" focused={focused} />
-          }} />
+          options={{ tabBarIcon: ({ focused }) => <TabIcon label="Profil" emoji="👤" focused={focused} /> }} />
       </Tab.Navigator>
     </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  splash: {
+    flex: 1, backgroundColor: colors.primary,
+    justifyContent: 'center', alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap',
+  },
+  splashLogo: { fontSize: 36, fontWeight: '800', color: '#fff' },
+  splashDot: { fontSize: 36, fontWeight: '300', color: 'rgba(255,255,255,0.7)' },
   tabBar: {
     backgroundColor: '#fff',
-    borderTopColor: colors.border,
-    height: 70,
-    paddingBottom: 8,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E8EDF5',
+    height: 78,
+    paddingTop: 8,
+    paddingBottom: 12,
+    elevation: 20,
+    shadowColor: '#1A56DB',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
   },
-  tabIcon: { alignItems: 'center', justifyContent: 'center', paddingTop: 6 },
-  tabIconText: { fontSize: 22, opacity: 0.5 },
-  tabIconActive: { opacity: 1 },
-  tabLabel: { fontSize: 10, color: colors.muted, marginTop: 2 },
-  tabLabelActive: { color: colors.primary, fontWeight: '600' },
-  scanButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  tabItem: { alignItems: 'center', gap: 3, opacity: 0.45, paddingTop: 4 },
+  tabItemActive: { opacity: 1 },
+  tabEmoji: { fontSize: 20 },
+  tabLabel: { fontSize: 10, color: colors.ink2, fontWeight: '500' },
+  tabLabelActive: { color: colors.primary, fontWeight: '700' },
+  scanWrap: { alignItems: 'center', gap: 3, marginBottom: 4 },
+  scanBtn: {
+    width: 56, height: 56, borderRadius: 28,
     backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    elevation: 5,
+    justifyContent: 'center', alignItems: 'center',
+    marginTop: -16,
+    elevation: 8,
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
   },
-  scanIcon: { fontSize: 26 },
+  scanEmoji: { fontSize: 24, color: '#fff' },
+  scanLabel: { fontSize: 10, color: colors.primary, fontWeight: '700' },
 });
