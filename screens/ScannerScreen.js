@@ -7,6 +7,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, storeColors } from '../theme';
+import EquivalentsScreen from './EquivalentsScreen';
 
 const API = 'https://botapp-u7qa.onrender.com';
 
@@ -197,9 +198,12 @@ export default function ScannerScreen() {
           )}
           renderItem={({ item, index }) => <PriceRow item={item} index={index} />}
           ListFooterComponent={() => (
-            <TouchableOpacity style={styles.scanAgain} onPress={reset}>
-              <Text style={styles.scanAgainText}>Skeniraj drugi produkt</Text>
-            </TouchableOpacity>
+            <View>
+              {result?.prices?.length > 0 && <EquivalentsScreen barcode={result.barcode} />}
+              <TouchableOpacity style={styles.scanAgain} onPress={reset}>
+                <Text style={styles.scanAgainText}>Skeniraj drugi produkt</Text>
+              </TouchableOpacity>
+            </View>
           )}
         />
       )}
