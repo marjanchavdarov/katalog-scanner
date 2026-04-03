@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScannerScreen from './screens/ScannerScreen';
 import SavedScreen from './screens/SavedScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import SearchScreen from './screens/SearchScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import { colors } from './theme';
 
@@ -59,6 +60,8 @@ export default function App() {
         tabBarShowLabel: false,
         headerShown: false,
       }}>
+        <Tab.Screen name="Pretraži" component={SearchScreen}
+          options={{ tabBarIcon: ({ focused }) => <TabIcon label="Pretraži" emoji="🔍" focused={focused} /> }} />
         <Tab.Screen name="Spremljeno" component={SavedScreen}
           options={{ tabBarIcon: ({ focused }) => <TabIcon label="Moji" emoji="❤️" focused={focused} /> }} />
         <Tab.Screen name="Skeniraj" component={ScannerScreen}
