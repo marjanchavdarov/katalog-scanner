@@ -145,14 +145,14 @@ export default function OnboardingScreen({ onVerified }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A56DB', justifyContent: 'center', padding: 24 },
+  container: { flex: 1, backgroundColor: '#1A1A1A', justifyContent: 'center', padding: 24 },
   box: { backgroundColor: '#fff', borderRadius: 20, padding: 28 },
   logo: { fontSize: 48, color: '#1A56DB', fontWeight: '800', textAlign: 'center' },
   title: { fontSize: 32, fontWeight: '800', color: '#1A1A1A', textAlign: 'center', marginBottom: 8 },
   sub: { fontSize: 15, color: '#888', textAlign: 'center', marginBottom: 24 },
   features: { gap: 12, marginBottom: 24 },
   feature: { fontSize: 15, color: '#444' },
-  btn: { backgroundColor: '#1A56DB', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 16 },
+  btn: { backgroundColor: '#00E676', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 16 },
   btnText: { color: '#fff', fontWeight: '700', fontSize: 17 },
   terms: { fontSize: 11, color: '#aaa', textAlign: 'center', lineHeight: 16 },
   link: { color: '#1A56DB' },

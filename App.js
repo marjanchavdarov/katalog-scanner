@@ -110,6 +110,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 12,
   },
-  scanEmoji: { fontSize: 24, color: '#fff' },
-  scanLabel: { fontSize: 9, color: colors.primary, fontWeight: '700', letterSpacing: -0.3 },
+  scanEmoji: { fontSize: 24, color: '#1A1A1A' },
+  scanLabel: { fontSize: 9, color: '#00C853', fontWeight: '700', letterSpacing: -0.3 },
 });

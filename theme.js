@@ -1,7 +1,7 @@
 export const colors = {
-  primary: '#1A56DB',      // PingPrice blue
-  primaryDark: '#1343A8',
-  primaryLight: '#EEF2FF',
+  primary: '#00E676',      // electric green
+  primaryDark: '#00C853',
+  primaryLight: '#E8FFF0',
   accent: '#F59E0B',       // amber for highlights
   success: '#10B981',      // green for cheapest
   bg: '#F8FAFF',

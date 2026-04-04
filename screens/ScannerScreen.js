@@ -104,7 +104,7 @@ export default function ScannerScreen() {
   const headerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Audio.Sound.createAsync({ uri: 'https://www.soundjay.com/buttons/beep-07a.mp3' })
+    Audio.Sound.createAsync({ uri: 'https://www.soundjay.com/buttons/beep-08b.mp3' })
       .then(({ sound }) => { soundRef.current = sound; }).catch(() => {});
     return () => { soundRef.current?.unloadAsync(); };
   }, []);
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   permTitle: { fontSize: 22, fontWeight: '700', color: colors.ink, marginBottom: 8 },
   permSub: { fontSize: 15, color: colors.muted, textAlign: 'center', marginBottom: 32 },
   permBtn: { backgroundColor: colors.primary, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12 },
-  permBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  permBtnText: { color: '#1A1A1A', fontWeight: '700', fontSize: 16 },
   scanOverlay: { flex: 1, justifyContent: 'space-between', alignItems: 'center', padding: 32, backgroundColor: 'rgba(0,0,0,0.55)' },
   scanTop: { alignItems: 'center', marginTop: 16 },
   scanTitle: { fontSize: 22, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
@@ -337,5 +337,5 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.ink, marginBottom: 4 },
   emptySub: { fontSize: 14, color: colors.muted, textAlign: 'center' },
   scanAgain: { marginTop: 16, backgroundColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center' },
-  scanAgainText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  scanAgainText: { color: '#1A1A1A', fontWeight: '700', fontSize: 15 },
 });
