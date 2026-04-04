@@ -153,6 +153,29 @@ export default function ScannerScreen() {
     if (!isSaved) Vibration.vibrate(50);
   }
 
+  async function addToList() {
+    if (!result) return;
+    const lists = JSON.parse(await AsyncStorage.getItem('shopping_lists') || '[]');
+    if (!lists.length) {
+      alert('Najprije kreiraj popis u Popis tabu!');
+      return;
+    }
+    const activeList = lists[0];
+    const item = {
+      ean: result.barcode,
+      name: result.name,
+      brand: result.brand,
+      quantity: 1,
+      size: `${result.quantity || ''} ${result.unit || ''}`.trim(),
+      added: new Date().toISOString()
+    };
+    const updatedItems = [...(activeList.items || []).filter(i => i.ean !== result.barcode), item];
+    lists[0] = { ...activeList, items: updatedItems };
+    await AsyncStorage.setItem('shopping_lists', JSON.stringify(lists));
+    Vibration.vibrate(50);
+    alert(`Dodano u "${activeList.name}"!`);
+  }
+
   function reset() {
     setScanned(false);
     setResult(null);
@@ -226,9 +249,14 @@ export default function ScannerScreen() {
                   {result?.quantity ? <Text style={styles.productQty}>{result.quantity} {result?.unit || ''}</Text> : null}
                   <Text style={styles.productBarcode}>#{result?.barcode}</Text>
                 </View>
-                <TouchableOpacity onPress={toggleSave} style={styles.saveBtn}>
-                  <Text style={styles.saveIcon}>{saved ? '❤️' : '🤍'}</Text>
-                </TouchableOpacity>
+                <View style={{ alignItems: 'center', gap: 8 }}>
+                  <TouchableOpacity onPress={toggleSave} style={styles.saveBtn}>
+                    <Text style={styles.saveIcon}>{saved ? '❤️' : '🤍'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={addToList} style={styles.addListBtn}>
+                    <Text style={styles.addListBtnText}>+ Popis</Text>
+                  </TouchableOpacity>
+                </View>
               </Animated.View>
 
               {/* Savings banner */}
@@ -338,4 +366,6 @@ const styles = StyleSheet.create({
   emptySub: { fontSize: 14, color: colors.muted, textAlign: 'center' },
   scanAgain: { marginTop: 16, backgroundColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center' },
   scanAgainText: { color: '#1A1A1A', fontWeight: '700', fontSize: 15 },
+  addListBtn: { backgroundColor: colors.primaryLight, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  addListBtnText: { fontSize: 11, color: colors.primary, fontWeight: '700' },
 });
