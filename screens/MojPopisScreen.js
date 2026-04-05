@@ -12,12 +12,25 @@ const API = 'https://botapp-u7qa.onrender.com';
 
 const ALL_STORES = ['lidl','konzum','kaufland','spar','studenac','tommy','plodine','eurospin','dm','ktc','metro','ntl','ribola','roto','trgocentar','brodokomerc','lorenco','boso','vrutak','zabac','jadranka_trgovina','trgovina_krk'];
 
+const STORE_DISPLAY = {
+  lidl:'Lidl', konzum:'Konzum', kaufland:'Kaufland', spar:'Spar',
+  studenac:'Studenac', tommy:'Tommy', plodine:'Plodine', eurospin:'Eurospin',
+  dm:'dm', ktc:'KTC', metro:'Metro', ntl:'NTL', ribola:'Ribola',
+  roto:'Roto', trgocentar:'Trgocentar', brodokomerc:'Brodokomerc',
+  lorenco:'Lorenco', boso:'Boso', vrutak:'Vrutak', zabac:'Žabac',
+  jadranka_trgovina:'Jadranka', trgovina_krk:'Trg. Krk',
+};
+
+const MEDALS = ['🥇','🥈','🥉'];
+
 function StoreBadge({ store, size = 32 }) {
-  const bg = storeColors[store] || colors.primary;
+  const key = (store || '').toLowerCase().replace(/\s+/g,'');
+  const bg = storeColors[key] || colors.primary;
+  const label = STORE_DISPLAY[key] || store;
   return (
-    <View style={[{ width: size, height: size, borderRadius: size/2, backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }]}>
-      <Text style={{ color: '#1A1A1A', fontWeight: '800', fontSize: size * 0.38 }}>
-        {store?.charAt(0).toUpperCase()}
+    <View style={{ width: size, height: size, borderRadius: size/2, backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{ color: '#fff', fontWeight: '800', fontSize: size * 0.38 }}>
+        {label.charAt(0).toUpperCase()}
       </Text>
     </View>
   );
@@ -36,6 +49,7 @@ export default function MojPopisScreen({ navigation }) {
   const [calculating, setCalculating] = useState(false);
   const [basketResult, setBasketResult] = useState(null);
   const [enabledStores, setEnabledStores] = useState(ALL_STORES);
+  const [expandedCard, setExpandedCard] = useState(null);
 
   useFocusEffect(useCallback(() => { loadData(); }, []));
 
@@ -129,67 +143,200 @@ export default function MojPopisScreen({ navigation }) {
     if (!activeList?.items?.length) return;
     setCalculating(true);
     setBasketResult(null);
+    setExpandedCard(null);
     try {
-      // Fetch prices for each barcode from cijene.dev
+      const totalItems = activeList.items.length;
+
+      // Fetch prices per EAN from cijene.dev via our backend
       const itemPrices = {};
       for (const item of activeList.items) {
-        const r = await fetch(`${API}/api/barcode/${item.ean}`);
-        const data = await r.json();
-        itemPrices[item.ean] = {
-          name: item.name,
-          qty: item.quantity || 1,
-          prices: (data.prices || []).filter(p => enabledStores.includes(p.store))
-        };
+        try {
+          const r = await fetch(`${API}/api/barcode/${item.ean}`);
+          const data = await r.json();
+          const filteredPrices = (data.prices || []).filter(p => enabledStores.includes(p.store));
+          itemPrices[item.ean] = {
+            name: item.name,
+            qty: item.quantity || 1,
+            prices: filteredPrices,
+          };
+        } catch { /* skip item on error */ }
       }
 
-      // Calculate per store totals
-      const storeTotals = {};
-      const storeItems = {};
-      
+      // Build per-store map: store -> { total, items: [{name, qty, price}], found }
+      const storeMap = {};
       for (const [ean, data] of Object.entries(itemPrices)) {
-        for (const price of data.prices) {
-          if (!storeTotals[price.store]) { storeTotals[price.store] = 0; storeItems[price.store] = []; }
-          storeTotals[price.store] += parseFloat(price.sale_price) * data.qty;
-          storeItems[price.store].push({ name: data.name, qty: data.qty, price: parseFloat(price.sale_price) });
+        for (const p of data.prices) {
+          const store = p.store;
+          const price = parseFloat(p.sale_price || 0);
+          if (!storeMap[store]) storeMap[store] = { total: 0, items: [], found: 0 };
+          // Only add once per item per store (already sorted cheapest first from backend)
+          if (!storeMap[store].items.find(i => i.ean === ean)) {
+            storeMap[store].total += price * data.qty;
+            storeMap[store].found += 1;
+            storeMap[store].items.push({ ean, name: data.name, qty: data.qty, price });
+          }
         }
       }
 
-      // Only stores with ALL items
-      const totalItems = activeList.items.length;
-      const completeStores = Object.entries(storeTotals)
-        .filter(([store]) => storeItems[store].length === totalItems)
-        .sort((a, b) => a[1] - b[1]);
+      // Single store rankings — include ALL stores, sorted by found desc then price asc
+      // For stores missing some items, show them with found count
+      const singleStore = Object.entries(storeMap).map(([store, data]) => ({
+        store,
+        found: data.found,
+        total: totalItems,
+        subtotal: data.total,
+        items: activeList.items.map(item => {
+          const match = data.items.find(i => i.ean === item.ean);
+          return match
+            ? { name: item.name, price: match.price, qty: match.qty, matched: true }
+            : { name: item.name, price: null, qty: item.quantity || 1, matched: false };
+        }),
+      })).sort((a, b) => b.found - a.found || a.subtotal - b.subtotal);
 
-      // Best single store
-      const bestSingle = completeStores[0];
-
-      // Absolute cheapest (best price per item from any store)
-      let absoluteTotal = 0;
-      const absoluteStores = {};
+      // Multi-store: greedy cheapest per item
+      const assignment = {}; // ean -> {store, price, name}
       for (const [ean, data] of Object.entries(itemPrices)) {
         if (!data.prices.length) continue;
-        const cheapest = data.prices.sort((a,b) => parseFloat(a.sale_price) - parseFloat(b.sale_price))[0];
-        absoluteTotal += parseFloat(cheapest.sale_price) * data.qty;
-        if (!absoluteStores[cheapest.store]) absoluteStores[cheapest.store] = { total: 0, items: [] };
-        absoluteStores[cheapest.store].total += parseFloat(cheapest.sale_price) * data.qty;
-        absoluteStores[cheapest.store].items.push({ name: data.name, qty: data.qty, price: parseFloat(cheapest.sale_price) });
+        const cheapest = data.prices[0]; // already sorted
+        assignment[ean] = { store: cheapest.store, price: parseFloat(cheapest.sale_price), name: data.name, qty: data.qty };
       }
 
+      const multiStores = {};
+      let multiTotal = 0;
+      for (const [ean, info] of Object.entries(assignment)) {
+        if (!multiStores[info.store]) multiStores[info.store] = { subtotal: 0, items: [] };
+        multiStores[info.store].subtotal += info.price * info.qty;
+        multiStores[info.store].items.push({ name: info.name, price: info.price, qty: info.qty });
+        multiTotal += info.price * info.qty;
+      }
+
+      const notFound = activeList.items
+        .filter(item => !itemPrices[item.ean]?.prices?.length)
+        .map(item => item.name);
+
       setBasketResult({
-        bestSingle: bestSingle ? { store: bestSingle[0], total: bestSingle[1], items: storeItems[bestSingle[0]] } : null,
-        absolute: { total: absoluteTotal, stores: absoluteStores },
-        allStores: completeStores.slice(0, 5),
-        savings: bestSingle ? (completeStores[completeStores.length-1]?.[1] - bestSingle[1]).toFixed(2) : null
+        single_store: singleStore,
+        multi_store: {
+          total: multiTotal,
+          found: Object.keys(assignment).length,
+          total_requested: totalItems,
+          store_count: Object.keys(multiStores).length,
+          stores: Object.entries(multiStores)
+            .map(([store, data]) => ({ store, subtotal: data.subtotal, items: data.items }))
+            .sort((a, b) => b.subtotal - a.subtotal),
+        },
+        not_found: notFound,
+        total_requested: totalItems,
       });
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Greška', 'Nije moguće dohvatiti cijene. Pokušaj ponovo.');
+    }
     finally { setCalculating(false); }
+  }
+
+  // ── Single store card ──────────────────────────────────────────
+  function SingleStoreCard({ store, rank }) {
+    const isExpanded = expandedCard === `single-${rank}`;
+    const storeKey = (store.store || '').toLowerCase().replace(/\s+/g,'');
+    const storeColor = storeColors[storeKey] || colors.primary;
+    const isFirst = rank === 0;
+    const label = STORE_DISPLAY[storeKey] || store.store;
+    const hasAll = store.found === store.total;
+
+    return (
+      <View style={[styles.resultCard, { borderColor: isFirst ? storeColor : colors.border, borderWidth: isFirst ? 2 : 1 }]}>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => setExpandedCard(isExpanded ? null : `single-${rank}`)}>
+          <View style={[styles.cardHeader, isFirst && { backgroundColor: storeColor, borderRadius: 11 }]}>
+            <Text style={{ fontSize: 22 }}>{MEDALS[rank] || '🏪'}</Text>
+            <StoreBadge store={storeKey} size={34} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cardStoreName, isFirst && { color: '#fff' }]}>{label}</Text>
+              <Text style={[styles.cardSub, isFirst && { color: 'rgba(255,255,255,0.75)' }]}>
+                {store.found}/{store.total} proizvoda {!hasAll && '⚠️'}
+              </Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={[styles.cardTotal, isFirst && { color: '#fff' }]}>{store.subtotal.toFixed(2)}€</Text>
+              <Text style={{ color: isFirst ? 'rgba(255,255,255,0.6)' : colors.muted, fontSize: 11 }}>{isExpanded ? '▲ zatvori' : '▼ detalji'}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {isExpanded && store.items.map((it, idx) => (
+          <View key={idx} style={[styles.itemLine, idx === 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
+            <Text style={[styles.itemLineName, !it.matched && { color: colors.muted }]} numberOfLines={1}>
+              {it.qty > 1 ? `${it.qty}× ` : ''}{it.name}
+            </Text>
+            {it.matched
+              ? <Text style={styles.itemLinePrice}>{(it.price * it.qty).toFixed(2)}€</Text>
+              : <Text style={styles.itemLineNA}>—</Text>
+            }
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  // ── Multi store card ───────────────────────────────────────────
+  function MultiStoreCard({ combo }) {
+    const isExpanded = expandedCard === 'multi';
+    const bestSingle = basketResult?.single_store?.[0];
+    const savings = bestSingle ? (bestSingle.subtotal - combo.total).toFixed(2) : null;
+
+    return (
+      <View style={[styles.resultCard, { borderColor: colors.primary, borderWidth: 2 }]}>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => setExpandedCard(isExpanded ? null : 'multi')}>
+          <View style={[styles.cardHeader, { backgroundColor: colors.primary, borderRadius: 11 }]}>
+            <Text style={{ fontSize: 22 }}>💰</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cardStoreName, { color: '#fff' }]}>
+                Maksimalna ušteda · {combo.store_count} {combo.store_count === 2 ? 'trgovine' : 'trgovina'}
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12 }}>
+                {combo.found}/{combo.total_requested} pronađeno
+              </Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={[styles.cardTotal, { color: '#fff' }]}>{combo.total.toFixed(2)}€</Text>
+              {savings && parseFloat(savings) > 0 && (
+                <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '700' }}>ušteda {savings}€</Text>
+              )}
+              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>{isExpanded ? '▲ zatvori' : '▼ detalji'}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {isExpanded && combo.stores.map((st, si) => {
+          const stkey = (st.store || '').toLowerCase().replace(/\s+/g,'');
+          const stcolor = storeColors[stkey] || colors.primary;
+          const stlabel = STORE_DISPLAY[stkey] || st.store;
+          return (
+            <View key={si} style={[styles.storeSection, { borderLeftColor: stcolor }]}>
+              <View style={styles.storeSectionHeader}>
+                <StoreBadge store={stkey} size={26} />
+                <Text style={styles.storeSectionName}>{stlabel}</Text>
+                <Text style={[styles.storeSectionTotal, { color: stcolor }]}>{st.subtotal.toFixed(2)}€</Text>
+              </View>
+              {st.items.map((it, idx) => (
+                <View key={idx} style={styles.itemLine}>
+                  <Text style={styles.itemLineName} numberOfLines={1}>
+                    {it.qty > 1 ? `${it.qty}× ` : ''}{it.name}
+                  </Text>
+                  <Text style={styles.itemLinePrice}>{(it.price * it.qty).toFixed(2)}€</Text>
+                </View>
+              ))}
+            </View>
+          );
+        })}
+      </View>
+    );
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Moj Popis</Text>
         <View style={styles.headerActions}>
@@ -202,13 +349,12 @@ export default function MojPopisScreen({ navigation }) {
         </View>
       </View>
 
-      {/* List tabs */}
       {lists.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.listTabs} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
           {lists.map(list => (
             <TouchableOpacity key={list.id}
               style={[styles.listTab, activeList?.id === list.id && styles.listTabActive]}
-              onPress={() => { setActiveList(list); setBasketResult(null); }}>
+              onPress={() => { setActiveList(list); setBasketResult(null); setExpandedCard(null); }}>
               <Text style={[styles.listTabText, activeList?.id === list.id && styles.listTabTextActive]}>
                 {list.name} ({list.items?.length || 0})
               </Text>
@@ -217,7 +363,6 @@ export default function MojPopisScreen({ navigation }) {
         </ScrollView>
       )}
 
-      {/* Empty state */}
       {lists.length === 0 && (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>🛒</Text>
@@ -229,7 +374,6 @@ export default function MojPopisScreen({ navigation }) {
         </View>
       )}
 
-      {/* Active list items */}
       {activeList && (
         <FlatList
           data={activeList.items || []}
@@ -281,63 +425,32 @@ export default function MojPopisScreen({ navigation }) {
                 }
               </TouchableOpacity>
 
+              {calculating && (
+                <Text style={styles.calcHint}>Dohvaćam cijene za {activeList.items.length} proizvoda...</Text>
+              )}
+
               {basketResult && (
                 <View style={styles.resultWrap}>
-                  <Text style={styles.resultTitle}>Rezultati</Text>
-
-                  {/* Best single store */}
-                  {basketResult.bestSingle && (
-                    <View style={styles.resultCard}>
-                      <View style={styles.resultCardHeader}>
-                        <Text style={styles.resultCardLabel}>🥇 Jedna trgovina</Text>
-                        <Text style={styles.resultCardTotal}>{basketResult.bestSingle.total.toFixed(2)}€</Text>
-                      </View>
-                      <View style={styles.resultStoreRow}>
-                        <StoreBadge store={basketResult.bestSingle.store} />
-                        <Text style={styles.resultStoreName}>{basketResult.bestSingle.store.toUpperCase()}</Text>
-                      </View>
-                    </View>
-                  )}
-
-                  {/* All complete stores */}
-                  {basketResult.allStores.length > 1 && (
-                    <View style={styles.resultCard}>
-                      <Text style={styles.resultCardLabel}>Usporedba trgovina</Text>
-                      {basketResult.allStores.map(([store, total], i) => (
-                        <View key={store} style={styles.storeCompRow}>
-                          <StoreBadge store={store} size={28} />
-                          <Text style={styles.storeCompName}>{store.toUpperCase()}</Text>
-                          <Text style={[styles.storeCompPrice, i === 0 && { color: colors.primary, fontWeight: '800' }]}>
-                            {total.toFixed(2)}€
-                          </Text>
-                          {i === 0 && <Text style={styles.cheapestTag}>NAJJEFTINIJE</Text>}
-                        </View>
+                  {basketResult.single_store?.length > 0 && (
+                    <View>
+                      <Text style={styles.sectionLabel}>JEDNA TRGOVINA</Text>
+                      {basketResult.single_store.slice(0, 3).map((s, i) => (
+                        <SingleStoreCard key={s.store} store={s} rank={i} />
                       ))}
                     </View>
                   )}
 
-                  {/* Absolute cheapest */}
-                  <View style={[styles.resultCard, { borderColor: colors.primary, borderWidth: 2 }]}>
-                    <View style={styles.resultCardHeader}>
-                      <Text style={styles.resultCardLabel}>💰 Maksimalna ušteda</Text>
-                      <Text style={[styles.resultCardTotal, { color: colors.primary }]}>{basketResult.absolute.total.toFixed(2)}€</Text>
+                  {basketResult.multi_store?.store_count > 1 && (
+                    <View style={{ marginTop: 16 }}>
+                      <Text style={styles.sectionLabel}>VIŠE TRGOVINA</Text>
+                      <MultiStoreCard combo={basketResult.multi_store} />
                     </View>
-                    <Text style={styles.resultSub}>Kupuješ u {Object.keys(basketResult.absolute.stores).length} trgovin{Object.keys(basketResult.absolute.stores).length === 1 ? 'i' : 'a'}</Text>
-                    {Object.entries(basketResult.absolute.stores).map(([store, data]) => (
-                      <View key={store} style={styles.storeCompRow}>
-                        <StoreBadge store={store} size={28} />
-                        <Text style={styles.storeCompName}>{store.toUpperCase()}</Text>
-                        <Text style={styles.storeCompPrice}>{data.total.toFixed(2)}€</Text>
-                      </View>
-                    ))}
-                  </View>
+                  )}
 
-                  {basketResult.savings && parseFloat(basketResult.savings) > 0 && (
-                    <View style={styles.savingsBanner}>
-                      <Text style={styles.savingsText}>
-                        Uštediš <Text style={styles.savingsAmount}>{basketResult.savings}€</Text> ako ideš u najjeftiniju umjesto najskuplje
-                      </Text>
-                    </View>
+                  {basketResult.not_found?.length > 0 && (
+                    <Text style={styles.notFoundText}>
+                      Nije pronađeno: {basketResult.not_found.join(', ')}
+                    </Text>
                   )}
                 </View>
               )}
@@ -346,7 +459,6 @@ export default function MojPopisScreen({ navigation }) {
         />
       )}
 
-      {/* Add product button */}
       {activeList && (
         <View style={styles.addBar}>
           <TouchableOpacity style={styles.addBtn} onPress={() => setShowSearch(true)}>
@@ -364,7 +476,6 @@ export default function MojPopisScreen({ navigation }) {
               <Text style={styles.modalClose}>Zatvori</Text>
             </TouchableOpacity>
           </View>
-
           <View style={styles.searchBox}>
             <TextInput
               style={styles.searchInput}
@@ -379,9 +490,7 @@ export default function MojPopisScreen({ navigation }) {
               <Text style={styles.searchGoBtnText}>Traži</Text>
             </TouchableOpacity>
           </View>
-
           {searching && <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />}
-
           <FlatList
             data={searchResults}
             keyExtractor={item => item.ean}
@@ -421,13 +530,11 @@ export default function MojPopisScreen({ navigation }) {
               const enabled = enabledStores.includes(store);
               return (
                 <TouchableOpacity key={store} style={styles.storeRow} onPress={() => {
-                  const updated = enabled
-                    ? enabledStores.filter(s => s !== store)
-                    : [...enabledStores, store];
+                  const updated = enabled ? enabledStores.filter(s => s !== store) : [...enabledStores, store];
                   saveStores(updated);
                 }}>
                   <StoreBadge store={store} size={36} />
-                  <Text style={styles.storeRowName}>{store.toUpperCase()}</Text>
+                  <Text style={styles.storeRowName}>{STORE_DISPLAY[store] || store.toUpperCase()}</Text>
                   <View style={[styles.storeCheck, enabled && styles.storeCheckActive]}>
                     {enabled && <Text style={styles.storeCheckMark}>✓</Text>}
                   </View>
@@ -496,27 +603,28 @@ const styles = StyleSheet.create({
   qtyBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
   qtyBtnText: { fontSize: 18, fontWeight: '700', color: colors.primary },
   qty: { fontSize: 16, fontWeight: '700', color: colors.ink, minWidth: 20, textAlign: 'center' },
-  calcBtn: { backgroundColor: colors.primary, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 8, marginBottom: 16 },
+  calcBtn: { backgroundColor: colors.primary, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 8, marginBottom: 8 },
   calcBtnText: { color: '#1A1A1A', fontWeight: '800', fontSize: 16 },
+  calcHint: { fontSize: 12, color: colors.muted, textAlign: 'center', marginBottom: 12 },
   addBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, backgroundColor: colors.bg, borderTopWidth: 1, borderTopColor: colors.border },
   addBtn: { backgroundColor: '#fff', borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 2, borderColor: colors.primary },
   addBtnText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
   resultWrap: { marginTop: 8 },
-  resultTitle: { fontSize: 13, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
-  resultCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.border },
-  resultCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  resultCardLabel: { fontSize: 14, fontWeight: '700', color: colors.ink },
-  resultCardTotal: { fontSize: 22, fontWeight: '800', color: colors.ink },
-  resultStoreRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  resultStoreName: { fontSize: 16, fontWeight: '700', color: colors.ink },
-  resultSub: { fontSize: 12, color: colors.muted, marginBottom: 10 },
-  storeCompRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.border },
-  storeCompName: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.ink },
-  storeCompPrice: { fontSize: 16, fontWeight: '700', color: colors.ink },
-  cheapestTag: { fontSize: 10, color: colors.primary, fontWeight: '800' },
-  savingsBanner: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginTop: 4, borderWidth: 1, borderColor: colors.primary + '40' },
-  savingsText: { fontSize: 13, color: colors.ink, fontWeight: '500' },
-  savingsAmount: { fontWeight: '800', color: colors.primary },
+  sectionLabel: { fontSize: 11, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
+  resultCard: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
+  cardStoreName: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  cardSub: { fontSize: 11, color: colors.muted, marginTop: 1 },
+  cardTotal: { fontSize: 20, fontWeight: '800', color: colors.ink },
+  itemLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border },
+  itemLineName: { fontSize: 13, color: colors.ink, flex: 1, paddingRight: 8 },
+  itemLinePrice: { fontSize: 13, fontWeight: '700', color: colors.ink },
+  itemLineNA: { fontSize: 12, color: colors.muted },
+  storeSection: { borderLeftWidth: 3, marginHorizontal: 12, marginBottom: 8, borderRadius: 4 },
+  storeSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, paddingBottom: 6 },
+  storeSectionName: { flex: 1, fontSize: 13, fontWeight: '700', color: colors.ink },
+  storeSectionTotal: { fontSize: 14, fontWeight: '800' },
+  notFoundText: { fontSize: 12, color: colors.muted, padding: 8, textAlign: 'center' },
   modalWrap: { flex: 1, backgroundColor: colors.bg },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.ink },
