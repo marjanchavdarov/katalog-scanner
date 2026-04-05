@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Camera } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 const API = 'https://botapp-u7qa.onrender.com';
 
@@ -11,93 +11,65 @@ export default function OnboardingScreen({ onVerified }) {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [, requestPermission] = useCameraPermissions();
 
   async function sendOtp() {
     if (!phone) return;
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
-      const r = await fetch(`${API}/api/auth/send-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone })
-      });
+      const r = await fetch(`${API}/api/auth/send-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) });
       const data = await r.json();
       if (data.ok) setStep('code');
       else setError(data.error || 'Greška');
-    } catch (e) {
-      setError('Greška pri slanju SMS-a');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError('Greška pri slanju SMS-a'); }
+    finally { setLoading(false); }
   }
 
   async function verifyOtp() {
     if (!code) return;
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
-      const r = await fetch(`${API}/api/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code: code.trim() })
-      });
+      const r = await fetch(`${API}/api/auth/verify-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, code: code.trim() }) });
       const data = await r.json();
       if (data.ok) {
-        const u = { phone, user_id: data.user_id };
-        await AsyncStorage.setItem('user', JSON.stringify(u));
+        await AsyncStorage.setItem('user', JSON.stringify({ phone, user_id: data.user_id }));
         setStep('camera');
-      } else {
-        setError(data.error || 'Pogrešan kod');
-      }
-    } catch (e) {
-      setError('Greška pri provjeri');
-    } finally {
-      setLoading(false);
-    }
+      } else setError(data.error || 'Pogrešan kod');
+    } catch { setError('Greška pri provjeri'); }
+    finally { setLoading(false); }
   }
 
   async function requestCamera() {
-    await Camera.requestCameraPermissionsAsync();
+    await requestPermission();
     const u = JSON.parse(await AsyncStorage.getItem('user'));
     onVerified(u);
   }
 
   if (step === 'welcome') return (
     <View style={styles.container}>
-      <View style={styles.box}>
-        <Text style={styles.logo}>%</Text>
-        <Text style={styles.title}>katalog.ai</Text>
-        <Text style={styles.sub}>Usporedi cijene u svim hrvatskim trgovinama</Text>
-        <View style={styles.features}>
-          <Text style={styles.feature}>📷 Skeniraj barkod u trgovini</Text>
-          <Text style={styles.feature}>💰 Vidi cijene u 21 lancu</Text>
-          <Text style={styles.feature}>❤️ Spremi proizvode i prati cijene</Text>
-        </View>
-        <TouchableOpacity style={styles.btn} onPress={() => setStep('phone')}>
-          <Text style={styles.btnText}>Počni →</Text>
-        </TouchableOpacity>
-        <Text style={styles.terms}>Nastavkom prihvaćate naše{' '}
-          <Text style={styles.link}>Uvjete korištenja</Text>. Podaci o cijenama su informativni i mogu sadržavati greške. Vaši podaci (broj telefona) se koriste isključivo za identifikaciju.
-        </Text>
+      <Image source={require('../assets/stedko-happy.png')} style={styles.mascot} />
+      <Text style={styles.title}>Štedko</Text>
+      <Text style={styles.sub}>Usporedi cijene u svim hrvatskim trgovinama</Text>
+      <View style={styles.features}>
+        <Text style={styles.feature}>📷  Skeniraj barkod u trgovini</Text>
+        <Text style={styles.feature}>💰  Vidi cijene u 21 lancu</Text>
+        <Text style={styles.feature}>❤️  Spremi proizvode i prati cijene</Text>
       </View>
+      <TouchableOpacity style={styles.btn} onPress={() => setStep('phone')}>
+        <Text style={styles.btnText}>Započni →</Text>
+      </TouchableOpacity>
+      <Text style={styles.terms}>Nastavkom prihvaćate naše <Text style={styles.link}>Uvjete korištenja</Text>. Podaci o cijenama su informativni.</Text>
     </View>
   );
 
   if (step === 'phone') return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.box}>
-        <Text style={styles.stepTitle}>Unesite broj telefona</Text>
-        <Text style={styles.stepSub}>Poslat ćemo vam SMS kod za potvrdu</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="+385 91 234 5678"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-          autoFocus
-        />
-        {error && typeof error === 'string' && error.length > 0 ? <Text style={styles.error}>{error}</Text> : null}
+      <Image source={require('../assets/stedko-scan.png')} style={[styles.mascot, { width: 120, height: 120 }]} />
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Unesite broj telefona</Text>
+        <Text style={styles.cardSub}>Poslat ćemo vam SMS kod za potvrdu</Text>
+        <TextInput style={styles.input} placeholder="+385 91 234 5678" placeholderTextColor="#aaa" value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoFocus />
+        {!!error && <Text style={styles.error}>{error}</Text>}
         <TouchableOpacity style={styles.btn} onPress={sendOtp} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Pošalji kod</Text>}
         </TouchableOpacity>
@@ -107,19 +79,11 @@ export default function OnboardingScreen({ onVerified }) {
 
   if (step === 'code') return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.box}>
-        <Text style={styles.stepTitle}>Unesite SMS kod</Text>
-        <Text style={styles.stepSub}>Poslali smo kod na {phone}</Text>
-        <TextInput
-          style={[styles.input, styles.codeInput]}
-          placeholder="123456"
-          value={code}
-          onChangeText={setCode}
-          keyboardType="number-pad"
-          maxLength={6}
-          autoFocus
-        />
-        {error && typeof error === 'string' && error.length > 0 ? <Text style={styles.error}>{error}</Text> : null}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Unesite SMS kod</Text>
+        <Text style={styles.cardSub}>Poslali smo kod na {phone}</Text>
+        <TextInput style={[styles.input, styles.codeInput]} placeholder="123456" placeholderTextColor="#aaa" value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} autoFocus />
+        {!!error && <Text style={styles.error}>{error}</Text>}
         <TouchableOpacity style={styles.btn} onPress={verifyOtp} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Potvrdi →</Text>}
         </TouchableOpacity>
@@ -132,10 +96,10 @@ export default function OnboardingScreen({ onVerified }) {
 
   if (step === 'camera') return (
     <View style={styles.container}>
-      <View style={styles.box}>
-        <Text style={styles.cameraIcon}>📷</Text>
-        <Text style={styles.stepTitle}>Dozvoli pristup kameri</Text>
-        <Text style={styles.stepSub}>Potrebno za skeniranje barkodova u trgovini</Text>
+      <View style={styles.card}>
+        <Text style={{ fontSize: 56, textAlign: 'center', marginBottom: 16 }}>📷</Text>
+        <Text style={styles.cardTitle}>Dozvoli pristup kameri</Text>
+        <Text style={styles.cardSub}>Potrebno za skeniranje barkodova u trgovini</Text>
         <TouchableOpacity style={styles.btn} onPress={requestCamera}>
           <Text style={styles.btnText}>Dozvoli kameru →</Text>
         </TouchableOpacity>
@@ -145,22 +109,21 @@ export default function OnboardingScreen({ onVerified }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A1A', justifyContent: 'center', padding: 24 },
-  box: { backgroundColor: '#fff', borderRadius: 20, padding: 28 },
-  logo: { fontSize: 48, color: '#1A56DB', fontWeight: '800', textAlign: 'center' },
-  title: { fontSize: 32, fontWeight: '800', color: '#1A1A1A', textAlign: 'center', marginBottom: 8 },
-  sub: { fontSize: 15, color: '#888', textAlign: 'center', marginBottom: 24 },
-  features: { gap: 12, marginBottom: 24 },
-  feature: { fontSize: 15, color: '#444' },
-  btn: { backgroundColor: '#00E676', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 16 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 17 },
-  terms: { fontSize: 11, color: '#aaa', textAlign: 'center', lineHeight: 16 },
-  link: { color: '#1A56DB' },
-  stepTitle: { fontSize: 22, fontWeight: '800', color: '#1A1A1A', marginBottom: 8 },
-  stepSub: { fontSize: 14, color: '#888', marginBottom: 20 },
-  input: { borderWidth: 1.5, borderColor: '#ddd', borderRadius: 10, padding: 14, fontSize: 18, marginBottom: 12 },
-  codeInput: { fontSize: 28, textAlign: 'center', letterSpacing: 8 },
-  error: { color: 'red', marginBottom: 8, fontSize: 13 },
-  back: { textAlign: 'center', color: '#E8572A', fontSize: 14 },
-  cameraIcon: { fontSize: 56, textAlign: 'center', marginBottom: 16 },
+  container: { flex: 1, backgroundColor: '#F4F6F9', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  mascot: { width: 180, height: 180, marginBottom: 8 },
+  title: { fontSize: 40, fontWeight: '900', color: '#1E293B', marginBottom: 8, letterSpacing: -1 },
+  sub: { fontSize: 16, color: '#64748B', textAlign: 'center', marginBottom: 28, lineHeight: 22 },
+  features: { gap: 14, marginBottom: 32, alignSelf: 'stretch' },
+  feature: { fontSize: 16, color: '#334155', fontWeight: '500' },
+  btn: { backgroundColor: '#00C853', padding: 18, borderRadius: 16, alignItems: 'center', marginBottom: 16, alignSelf: 'stretch' },
+  btnText: { color: '#fff', fontWeight: '800', fontSize: 17 },
+  terms: { fontSize: 11, color: '#94A3B8', textAlign: 'center', lineHeight: 16, paddingHorizontal: 8 },
+  link: { color: '#00C853' },
+  card: { backgroundColor: '#fff', borderRadius: 24, padding: 28, width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 6 },
+  cardTitle: { fontSize: 24, fontWeight: '800', color: '#1E293B', marginBottom: 8 },
+  cardSub: { fontSize: 14, color: '#64748B', marginBottom: 24, lineHeight: 20 },
+  input: { borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, padding: 16, fontSize: 18, marginBottom: 14, color: '#1E293B', backgroundColor: '#F8FAFC' },
+  codeInput: { fontSize: 32, textAlign: 'center', letterSpacing: 10, fontWeight: '700' },
+  error: { color: '#EF4444', marginBottom: 10, fontSize: 13, fontWeight: '500' },
+  back: { textAlign: 'center', color: '#64748B', fontSize: 14, marginTop: 4 },
 });
