@@ -341,7 +341,7 @@ export default function ScannerScreen() {
               <Text style={styles.stedkoBubbleLabel}>Skeniraj{'\n'}proizvod!</Text>
             </View>
             <Image
-              source={require('../assets/stedko-scan.png')}
+              source={require('../assets/icon.png')}
               style={styles.stedkoFloat}
               defaultSource={require('../assets/icon.png')}
             />
@@ -416,9 +416,8 @@ export default function ScannerScreen() {
                   transform: [{ scale: stedkoAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }]
                 }]}>
                   <Image
-                    source={require('../assets/stedko-happy.png')}
+                    source={require('../assets/icon.png')}
                     style={styles.stedkoInline}
-                    defaultSource={require('../assets/icon.png')}
                   />
                   <Text style={styles.savingsText}>
                     Uštedi <Text style={styles.savingsAmount}>{savings}€</Text> ako kupiš u najjeftinijoj trgovini!
@@ -429,9 +428,8 @@ export default function ScannerScreen() {
               {prices.length === 0 && (
                 <View style={styles.empty}>
                   <Image
-                    source={require('../assets/stedko-sad.png')}
+                    source={require('../assets/icon.png')}
                     style={{ width: 120, height: 120 }}
-                    defaultSource={require('../assets/icon.png')}
                   />
                   <Text style={styles.emptyTitle}>Nije u bazi još</Text>
                   <Text style={styles.emptySub}>Pokušaj skenirati drugi proizvod</Text>
