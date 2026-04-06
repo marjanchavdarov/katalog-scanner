@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Text, View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScannerScreen from './screens/ScannerScreen';
 import MojPopisScreen from './screens/MojPopisScreen';
@@ -11,22 +11,18 @@ import { colors } from './theme';
 
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ label, emoji, focused }) {
-  return (
-    <View style={[styles.tabItem, focused && styles.tabItemActive]}>
-      <Text style={styles.tabEmoji}>{emoji}</Text>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
-    </View>
-  );
+// Cart icon SVG-style using text
+function CartIcon({ color }) {
+  return <Text style={{ fontSize: 22, color }}>🛒</Text>;
+}
+function UserIcon({ color }) {
+  return <Text style={{ fontSize: 22, color }}>👤</Text>;
 }
 
 function ScanButton() {
   return (
-    <View style={styles.scanWrap}>
-      <View style={styles.scanBtn}>
-        <Text style={styles.scanEmoji}>⊙</Text>
-      </View>
-      <Text style={styles.scanLabel}>Skeniraj</Text>
+    <View style={styles.scanBtn}>
+      <View style={styles.scanInner} />
     </View>
   );
 }
@@ -44,9 +40,8 @@ export default function App() {
 
   if (loading) return (
     <View style={styles.splash}>
-      <Text style={styles.splashLogo}>katalog</Text>
-      <Text style={styles.splashDot}>.ai</Text>
-      <ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} />
+      <Text style={styles.splashText}>Štedko</Text>
+      <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
     </View>
   );
 
@@ -54,45 +49,84 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Tab.Navigator screenOptions={{
-        tabBarStyle: styles.tabBar,
-        tabBarShowLabel: false,
-        headerShown: false,
-      }}>
-        <Tab.Screen name="Popis" component={MojPopisScreen}
-          options={{ tabBarIcon: ({ focused }) => <TabIcon label="Popis" emoji="📋" focused={focused} /> }} />
-        <Tab.Screen name="Skeniraj" component={ScannerScreen}
-          options={{ tabBarIcon: () => <ScanButton /> }} />
-        <Tab.Screen name="Profil" component={ProfileScreen}
-          options={{ tabBarIcon: ({ focused }) => <TabIcon label="Profil" emoji="👤" focused={focused} /> }} />
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: styles.tabBar,
+          tabBarShowLabel: true,
+          tabBarActiveTintColor: '#1A3C2E',
+          tabBarInactiveTintColor: '#9CA3AF',
+          tabBarLabelStyle: styles.tabLabel,
+        }}
+      >
+        <Tab.Screen
+          name="Popis"
+          component={MojPopisScreen}
+          options={{
+            tabBarLabel: 'Popis',
+            tabBarIcon: ({ color }) => <CartIcon color={color} />,
+          }}
+        />
+        <Tab.Screen
+          name="Skeniraj"
+          component={ScannerScreen}
+          options={{
+            tabBarLabel: '',
+            tabBarIcon: () => <ScanButton />,
+          }}
+        />
+        <Tab.Screen
+          name="Profil"
+          component={ProfileScreen}
+          options={{
+            tabBarLabel: 'Profil',
+            tabBarIcon: ({ color }) => <UserIcon color={color} />,
+          }}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  splash: { flex: 1, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center', flexDirection: 'row' },
-  splashLogo: { fontSize: 36, fontWeight: '800', color: colors.primary },
-  splashDot: { fontSize: 36, fontWeight: '300', color: 'rgba(255,255,255,0.5)' },
-  tabBar: {
-    backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E8EDF5',
-    height: 78, paddingTop: 8, paddingBottom: 12,
-    elevation: 20, shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.06, shadowRadius: 16,
+  splash: {
+    flex: 1, backgroundColor: '#fff',
+    justifyContent: 'center', alignItems: 'center',
   },
-  tabItem: { alignItems: 'center', gap: 3, opacity: 0.4, paddingTop: 4 },
-  tabItemActive: { opacity: 1 },
-  tabEmoji: { fontSize: 20 },
-  tabLabel: { fontSize: 10, color: colors.ink, fontWeight: '500' },
-  tabLabelActive: { color: colors.primary, fontWeight: '700' },
-  scanWrap: { alignItems: 'center', gap: 3, marginBottom: 4 },
+  splashText: {
+    fontSize: 36, fontWeight: '900', color: '#1A3C2E',
+  },
+  tabBar: {
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    height: 72,
+    paddingBottom: 8,
+    paddingTop: 8,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   scanBtn: {
     width: 56, height: 56, borderRadius: 28,
-    backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center',
-    marginTop: -16, elevation: 8,
-    shadowColor: colors.primary, shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5, shadowRadius: 12,
+    backgroundColor: '#1A3C2E',
+    justifyContent: 'center', alignItems: 'center',
+    marginTop: -16,
+    elevation: 8,
+    shadowColor: '#1A3C2E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
-  scanEmoji: { fontSize: 24, color: '#1A1A1A' },
-  scanLabel: { fontSize: 10, color: colors.primary, fontWeight: '700' },
+  scanInner: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 3, borderColor: '#fff',
+  },
 });
