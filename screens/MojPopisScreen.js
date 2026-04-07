@@ -430,7 +430,7 @@ export default function MojPopisScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 8 },
-  headerTitle: { fontSize: 26, fontWeight: '800', color: colors.ink },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: colors.ink },
   headerActions: { flexDirection: 'row', gap: 8 },
   headerBtn: { backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.border },
   headerBtnText: { fontSize: 13, fontWeight: '600', color: colors.ink },
