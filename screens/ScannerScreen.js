@@ -313,8 +313,6 @@ export default function ScannerScreen() {
               <ScanFrame />
               <Text style={styles.scanHint}>Usmjeri na barkod</Text>
             </View>
-              </View>
-            </View>
           </View>
         )}
       </SafeAreaView>
