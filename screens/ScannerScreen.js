@@ -313,12 +313,7 @@ export default function ScannerScreen() {
               <ScanFrame />
               <Text style={styles.scanHint}>Usmjeri na barkod</Text>
             </View>
-            {/* Štedko bubble */}
-            <View style={styles.stedkoBubble}>
-              <View style={styles.stedkoBubbleBox}>
-                <Text style={styles.stedkoBubbleText}>Skeniraj{'\n'}proizvod!</Text>
               </View>
-              <Image source={require('../assets/stedko-scan.png')} style={styles.stedkoImg} />
             </View>
           </View>
         )}
@@ -445,10 +440,6 @@ const styles = StyleSheet.create({
   br: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 6 },
   scanLine: { width: 220, height: 2.5, backgroundColor: colors.primary, borderRadius: 2, shadowColor: colors.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 8, elevation: 6 },
   scanHint: { position: 'absolute', bottom: 20, fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '500', letterSpacing: 0.3 },
-  stedkoBubble: { position: 'absolute', bottom: 20, right: 12, flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  stedkoBubbleBox: { backgroundColor: '#fff', borderRadius: 12, borderBottomRightRadius: 2, paddingHorizontal: 10, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
-  stedkoBubbleText: { fontSize: 12, fontWeight: '700', color: colors.ink, textAlign: 'center' },
-  stedkoImg: { width: 70, height: 70 },
   productCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 3 },
   productImgWrap: { width: 80, height: 80, borderRadius: 14, backgroundColor: '#F8FAFF', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   productImg: { width: 80, height: 80 },

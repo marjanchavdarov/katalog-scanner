@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScannerScreen from './screens/ScannerScreen';
 import MojPopisScreen from './screens/MojPopisScreen';
@@ -10,14 +10,6 @@ import OnboardingScreen from './screens/OnboardingScreen';
 import { colors } from './theme';
 
 const Tab = createBottomTabNavigator();
-
-// Cart icon SVG-style using text
-function CartIcon({ color }) {
-  return <Text style={{ fontSize: 22, color }}>🛒</Text>;
-}
-function UserIcon({ color }) {
-  return <Text style={{ fontSize: 22, color }}>👤</Text>;
-}
 
 function ScanButton() {
   return (
@@ -54,7 +46,7 @@ export default function App() {
           headerShown: false,
           tabBarStyle: styles.tabBar,
           tabBarShowLabel: true,
-          tabBarActiveTintColor: '#1A3C2E',
+          tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: '#9CA3AF',
           tabBarLabelStyle: styles.tabLabel,
         }}
@@ -64,7 +56,9 @@ export default function App() {
           component={MojPopisScreen}
           options={{
             tabBarLabel: 'Popis',
-            tabBarIcon: ({ color }) => <CartIcon color={color} />,
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 20, lineHeight: 24, color }}>🛒</Text>
+            ),
           }}
         />
         <Tab.Screen
@@ -80,7 +74,9 @@ export default function App() {
           component={ProfileScreen}
           options={{
             tabBarLabel: 'Profil',
-            tabBarIcon: ({ color }) => <UserIcon color={color} />,
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 20, lineHeight: 24, color }}>👤</Text>
+            ),
           }}
         />
       </Tab.Navigator>
@@ -94,15 +90,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   splashText: {
-    fontSize: 36, fontWeight: '900', color: '#1A3C2E',
+    fontSize: 36, fontWeight: '900', color: colors.primary,
   },
   tabBar: {
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
-    height: 72,
-    paddingBottom: 8,
-    paddingTop: 8,
+    height: 68,
+    paddingBottom: 10,
+    paddingTop: 6,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -112,15 +108,15 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 11,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 0,
   },
   scanBtn: {
     width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#1A3C2E',
+    backgroundColor: colors.primary,
     justifyContent: 'center', alignItems: 'center',
-    marginTop: -16,
+    marginTop: -20,
     elevation: 8,
-    shadowColor: '#1A3C2E',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
