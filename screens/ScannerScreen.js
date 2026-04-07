@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   ActivityIndicator, Vibration, SafeAreaView, StatusBar,
-  Animated, Easing, TextInput, Image, Dimensions, Platform
+  Animated, Easing, TextInput, Image, Dimensions, Platform, Alert, Modal
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
@@ -121,6 +121,8 @@ export default function ScannerScreen() {
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showListPicker, setShowListPicker] = useState(false);
+  const [allLists, setAllLists] = useState([]);
   const soundRef = useRef(null);
   const headerAnim = useRef(new Animated.Value(0)).current;
   const bannerAnim = useRef(new Animated.Value(0)).current;
@@ -159,6 +161,8 @@ export default function ScannerScreen() {
       ));
       const saved_ = JSON.parse(await AsyncStorage.getItem('saved_products') || '[]');
       setSaved(saved_.some(s => s.barcode === data));
+      const lists_ = JSON.parse(await AsyncStorage.getItem('shopping_lists') || '[]');
+      setAllLists(lists_);
       fetchProductImage(data).then(url => { if (url) setProductImage(url); });
     } catch {
       setResult({ barcode: data, name: 'Ups, nešto nije štimalo', prices: [] });
@@ -215,17 +219,29 @@ export default function ScannerScreen() {
   async function addToList() {
     if (!result) return;
     const lists = JSON.parse(await AsyncStorage.getItem('shopping_lists') || '[]');
-    if (!lists.length) { alert('Najprije kreiraj popis u Popis tabu!'); return; }
+    if (!lists.length) { Alert.alert('Kreiraj popis', 'Najprije kreiraj popis u Popis tabu!'); return; }
+    if (lists.length === 1) {
+      await saveToList(lists[0]);
+    } else {
+      setShowListPicker(true);
+    }
+  }
+
+  async function saveToList(list) {
+    const lists = JSON.parse(await AsyncStorage.getItem('shopping_lists') || '[]');
     const item = {
       ean: result.barcode, name: result.name, brand: result.brand,
       quantity: 1, size: `${result.quantity || ''} ${result.unit || ''}`.trim(),
       added: new Date().toISOString()
     };
-    const updatedItems = [...(lists[0].items || []).filter(i => i.ean !== result.barcode), item];
-    lists[0] = { ...lists[0], items: updatedItems };
-    await AsyncStorage.setItem('shopping_lists', JSON.stringify(lists));
+    const updated = lists.map(l => l.id === list.id
+      ? { ...l, items: [...(l.items || []).filter(i => i.ean !== result.barcode), item] }
+      : l
+    );
+    await AsyncStorage.setItem('shopping_lists', JSON.stringify(updated));
     Vibration.vibrate(50);
-    alert(`✓ Dodano u "${lists[0].name}"!`);
+    setShowListPicker(false);
+    Alert.alert('Dodano ✓', `Spremljeno u "${list.name}"`);
   }
 
   function reset() {
@@ -409,6 +425,28 @@ export default function ScannerScreen() {
           )}
         />
       )}
+      <Modal visible={showListPicker} animationType="fade" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: colors.ink, marginBottom: 16 }}>Dodaj u popis</Text>
+            {allLists.map(list => (
+              <TouchableOpacity key={list.id} onPress={() => saveToList(list)}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                <Text style={{ fontSize: 24, marginRight: 12 }}>🛒</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: colors.ink }}>{list.name}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>{list.items?.length || 0} proizvoda</Text>
+                </View>
+                <Text style={{ color: colors.primary, fontWeight: '700' }}>Dodaj →</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={() => setShowListPicker(false)}
+              style={{ marginTop: 16, padding: 14, alignItems: 'center' }}>
+              <Text style={{ color: colors.muted, fontWeight: '600' }}>Odustani</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
