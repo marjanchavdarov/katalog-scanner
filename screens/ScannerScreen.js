@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   ActivityIndicator, Vibration, SafeAreaView, StatusBar,
-  Animated, Easing, TextInput, Image, Dimensions
+  Animated, Easing, TextInput, Image, Dimensions, Platform
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
@@ -252,7 +252,7 @@ export default function ScannerScreen() {
   );
 
   if (!scanned) return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
