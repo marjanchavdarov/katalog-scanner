@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, ActivityIndicator, SafeAreaView, StatusBar,
-  Modal, ScrollView, Vibration, Alert, Image, Platform, StatusBar as RNStatusBar
+  Modal, ScrollView, Vibration, Alert, Image, Platform
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -428,7 +428,7 @@ export default function MojPopisScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight : 0 },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 8 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: colors.ink },
   headerActions: { flexDirection: 'row', gap: 8 },
