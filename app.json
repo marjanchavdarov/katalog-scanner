@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Štedko",
+    "name": "\u0160tedko",
     "slug": "katalog-scanner",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,7 +11,7 @@
       "enabled": false
     },
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

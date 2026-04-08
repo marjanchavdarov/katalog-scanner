@@ -1,18 +1,37 @@
 export const colors = {
-  primary: '#10B981',       // Modern Emerald Green
+  primary: '#10B981',
   primaryLight: '#ECFDF5',
-  bg: '#F8FAFC',            // Softer Slate background
-  ink: '#1E293B',           // Deep Slate for text
-  muted: '#64748B',         // Slate Gray
-  border: '#E2E8F0',        // Subtle border
+  primaryDark: '#059669',
+  success: '#10B981',
+  bg: '#F8FAFC',
+  ink: '#1E293B',
+  muted: '#64748B',
+  border: '#E2E8F0',
   white: '#FFFFFF',
   danger: '#EF4444',
 };
 
 export const storeColors = {
-  lidl: '#0050AA', konzum: '#ED1C24', kaufland: '#ED1C24', 
-  spar: '#008751', tommy: '#005596', plodine: '#2E3192',
-  ribola: '#1B3688', roto: '#8B572A', ntl: '#DA251C',
-  ktc: '#0054A6', metro: '#FFE600', eurospin: '#003DA5',
-  dm: '#003087', boso: '#ED1C24', vrutak: '#E30613'
+  lidl: '#0050AA',
+  konzum: '#ED1C24',
+  kaufland: '#CC0000',
+  spar: '#008751',
+  tommy: '#005596',
+  plodine: '#2E3192',
+  eurospin: '#003DA5',
+  dm: '#003087',
+  ktc: '#0054A6',
+  metro: '#CC9900',
+  ntl: '#DA251C',
+  ribola: '#1B3688',
+  roto: '#8B572A',
+  trgocentar: '#E05A00',
+  brodokomerc: '#1A1A6E',
+  lorenco: '#2D8B2D',
+  boso: '#ED1C24',
+  vrutak: '#E30613',
+  studenac: '#FF6B00',
+  zabac: '#00AA44',
+  jadrankatrgovina: '#004B8D',
+  trgovinakrek: '#555555',
 };

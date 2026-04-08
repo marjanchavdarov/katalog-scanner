@@ -21,14 +21,50 @@ async function fetchProductImage(ean) {
   } catch { return null; }
 }
 
-function StoreBadge({ store, size = 40 }) {
+function StoreBadge({ store, size = 48 }) {
   const key = (store || '').toLowerCase().replace(/[\s_]+/g, '');
+  const logoMap = {
+    lidl: require('../assets/logos/lidl.png'),
+    konzum: require('../assets/logos/konzum.png'),
+    kaufland: require('../assets/logos/kaufland.png'),
+    spar: require('../assets/logos/spar.png'),
+    studenac: require('../assets/logos/studenac.png'),
+    tommy: require('../assets/logos/tommy.png'),
+    plodine: require('../assets/logos/plodine.png'),
+    eurospin: require('../assets/logos/eurospin.png'),
+    dm: require('../assets/logos/dm.png'),
+    ktc: require('../assets/logos/ktc.png'),
+    metro: require('../assets/logos/metro.png'),
+    ntl: require('../assets/logos/ntl.png'),
+    ribola: require('../assets/logos/ribola.png'),
+    roto: require('../assets/logos/roto.png'),
+    trgocentar: require('../assets/logos/trgocentar.png'),
+    brodokomerc: require('../assets/logos/brodokomerc.png'),
+    lorenco: require('../assets/logos/lorenco.png'),
+    boso: require('../assets/logos/boso.png'),
+    vrutak: require('../assets/logos/vrutak.png'),
+    zabac: require('../assets/logos/zabac.png'),
+    jadrankatrgovina: require('../assets/logos/jadranka_trgovina.png'),
+    trgovinakrk: require('../assets/logos/trgovina_krk.png'),
+  };
+  const logo = logoMap[key];
   const bg = storeColors[key] || '#64748B';
   return (
-    <View style={{ width: size, height: size, borderRadius: 10, backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ color: '#fff', fontWeight: '900', fontSize: size * 0.3, letterSpacing: 0.5 }}>
-        {(store || '').slice(0, 3).toUpperCase()}
-      </Text>
+    <View style={{
+      width: size, height: size, borderRadius: size * 0.22,
+      backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
+      borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08, shadowRadius: 3, elevation: 2,
+    }}>
+      {logo
+        ? <Image source={logo} style={{ width: size * 0.98, height: size * 0.98 }} resizeMode="contain" />
+        : <View style={{ width: size, height: size, backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontWeight: '900', fontSize: size * 0.3 }}>
+              {(store || '').slice(0, 3).toUpperCase()}
+            </Text>
+          </View>
+      }
     </View>
   );
 }
