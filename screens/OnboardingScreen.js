@@ -79,7 +79,7 @@ export default function OnboardingScreen({ onVerified }) {
           <View style={styles.featuresList}>
             {[
               { icon: '📷', text: 'Skeniraj barkod u sekundi' },
-              { icon: '💰', text: 'Cijene u 21 lancu odjednom' },
+              { icon: '💰', text: 'Cijene u svim lancima odjednom' },
               { icon: '🛒', text: 'Pametna košarica s uštedom' },
             ].map((f, i) => (
               <View key={i} style={styles.featureItem}>

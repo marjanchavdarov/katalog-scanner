@@ -11,6 +11,36 @@ import { colors } from './theme';
 
 const Tab = createBottomTabNavigator();
 
+const PRELOAD_ASSETS = [
+  require('./assets/stedko-happy.png'),
+  require('./assets/stedko-sad.png'),
+  require('./assets/stedko-scan.png'),
+  require('./assets/stedko-wave.png'),
+  require('./assets/icon.png'),
+  require('./assets/logos/lidl.png'),
+  require('./assets/logos/konzum.png'),
+  require('./assets/logos/kaufland.png'),
+  require('./assets/logos/spar.png'),
+  require('./assets/logos/studenac.png'),
+  require('./assets/logos/tommy.png'),
+  require('./assets/logos/plodine.png'),
+  require('./assets/logos/eurospin.png'),
+  require('./assets/logos/dm.png'),
+  require('./assets/logos/ktc.png'),
+  require('./assets/logos/metro.png'),
+  require('./assets/logos/ntl.png'),
+  require('./assets/logos/ribola.png'),
+  require('./assets/logos/roto.png'),
+  require('./assets/logos/trgocentar.png'),
+  require('./assets/logos/brodokomerc.png'),
+  require('./assets/logos/lorenco.png'),
+  require('./assets/logos/boso.png'),
+  require('./assets/logos/vrutak.png'),
+  require('./assets/logos/zabac.png'),
+  require('./assets/logos/jadranka_trgovina.png'),
+  require('./assets/logos/trgovina_krk.png'),
+];
+
 function ScanButton() {
   return (
     <View style={styles.scanBtn}>

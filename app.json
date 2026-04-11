@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "\u0160tedko",
+    "name": "Štedko",
     "slug": "katalog-scanner",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,7 +29,15 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-barcode-scanner"
+      "expo-barcode-scanner",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#00C853"
+        }
+      ],
+      "expo-asset"
     ]
   }
 }

@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, ActivityIndicator, SafeAreaView, StatusBar,
-  Modal, ScrollView, Vibration, Alert, Image, Platform
+  Modal, ScrollView, Vibration, Alert, Image, Platform, KeyboardAvoidingView
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, storeColors } from '../theme';
 
 const API = 'https://botapp-u7qa.onrender.com';
-const ALL_STORES = ['lidl','konzum','kaufland','spar','studenac','tommy','plodine','eurospin','dm','ktc','metro','ntl','ribola','roto','trgocentar','brodokomerc','lorenco','boso','vrutak','zabac','jadranka_trgovina','trgovina_krk'];
-const STORE_DISPLAY = { lidl:'Lidl', konzum:'Konzum', kaufland:'Kaufland', spar:'Spar', studenac:'Studenac', tommy:'Tommy', plodine:'Plodine', eurospin:'Eurospin', dm:'dm', ktc:'KTC', metro:'Metro', ntl:'NTL', ribola:'Ribola', roto:'Roto', trgocentar:'Trgocentar', brodokomerc:'Brodokomerc', lorenco:'Lorenco', boso:'Boso', vrutak:'Vrutak', zabac:'Žabac', jadranka_trgovina:'Jadranka', trgovina_krk:'Trg. Krk' };
+const ALL_STORES = ['lidl','konzum','kaufland','spar','studenac','tommy','plodine','eurospin','dm','ktc','metro','ntl','ribola','roto','trgocentar','brodokomerc','lorenco','boso','vrutak','zabac','jadranka_trgovina','trgovina-krk','djelo_vodice','branka','gavranovic'];
+const STORE_DISPLAY = { lidl:'Lidl', konzum:'Konzum', kaufland:'Kaufland', spar:'Spar', studenac:'Studenac', tommy:'Tommy', plodine:'Plodine', eurospin:'Eurospin', dm:'dm', ktc:'KTC', metro:'Metro', ntl:'NTL', ribola:'Ribola', roto:'Roto', trgocentar:'Trgocentar', brodokomerc:'Brodokomerc', lorenco:'Lorenco', boso:'Boso', vrutak:'Vrutak', zabac:'Žabac', jadranka_trgovina:'Jadranka', trgovina_krk:'Trg. Krk', 'trgovina-krk':'Trg. Krk', djelo_vodice:'Djelo Vodice', branka:'Branka', gavranovic:'Gavranović' };
 const MEDALS = ['🥇','🥈','🥉'];
 
 async function fetchProductImage(ean) {
@@ -343,17 +343,28 @@ export default function MojPopisScreen({ navigation }) {
           )}
           renderItem={({ item }) => (
             <View style={styles.itemCard}>
-              <ProductImage ean={item.ean} size={56} />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                {item.brand && <Text style={styles.itemBrand}>{item.brand}</Text>}
-                <Text style={styles.itemSize}>{item.size}</Text>
+              <View style={styles.itemCardTop}>
+                <ProductImage ean={item.ean} size={52} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+                  {item.brand && <Text style={styles.itemBrand}>{item.brand}</Text>}
+                  <Text style={styles.itemSize}>{item.size}</Text>
+                </View>
               </View>
-              <View style={styles.qtyRow}>
-                <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(item.ean, -1)}><Text style={styles.qtyBtnText}>−</Text></TouchableOpacity>
-                <Text style={styles.qty}>{item.quantity || 1}</Text>
-                <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(item.ean, 1)}><Text style={styles.qtyBtnText}>+</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => removeItem(item.ean)} style={{ marginLeft: 6 }}><Text style={{ color: '#EF4444', fontSize: 20 }}>×</Text></TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 10, marginTop: 2 }}>
+                <View style={{ width: 36 }} />
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(item.ean, -1)}>
+                    <Text style={styles.qtyBtnText}>−</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.qty}>{item.quantity || 1}</Text>
+                  <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(item.ean, 1)}>
+                    <Text style={styles.qtyBtnText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.removeBtn} onPress={() => removeItem(item.ean)}>
+                  <Text style={styles.removeBtnText}>×</Text>
+                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -390,12 +401,14 @@ export default function MojPopisScreen({ navigation }) {
       {activeList && (
         <View style={styles.addBar}>
           <TouchableOpacity style={styles.addBtn} onPress={() => setShowSearch(true)}>
-            <Text style={styles.addBtnText}>+ Dodaj proizvod</Text>
+            <Text style={{ fontSize: 20 }}>🛒</Text>
+            <Text style={styles.addBtnText}>Dodaj proizvod</Text>
           </TouchableOpacity>
         </View>
       )}
 
       <Modal visible={showSearch} animationType="slide" presentationStyle="pageSheet">
+        <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <SafeAreaView style={styles.modalWrap}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Dodaj u popis</Text>
@@ -408,7 +421,7 @@ export default function MojPopisScreen({ navigation }) {
           {searching && <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />}
           <FlatList data={searchResults} keyExtractor={item => item.ean} contentContainerStyle={{ padding: 16 }}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.searchResultCard} onPress={() => addItem(item.ean, item.name, item.brand, item.quantity, item.unit)}>
+              <View style={styles.searchResultCard}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.searchResultName} numberOfLines={2}>{item.name}</Text>
                   {item.brand && <Text style={styles.searchResultBrand}>{item.brand}</Text>}
@@ -416,12 +429,15 @@ export default function MojPopisScreen({ navigation }) {
                 </View>
                 <View style={{ alignItems: 'flex-end', marginLeft: 12 }}>
                   <Text style={styles.searchResultPrice}>{parseFloat(item.cheapest_price).toFixed(2)}€</Text>
-                  <Text style={styles.searchResultAdd}>+ Dodaj</Text>
+                  <TouchableOpacity style={styles.searchResultAddBtn} onPress={() => addItem(item.ean, item.name, item.brand, item.quantity, item.unit)}>
+                    <Text style={{ fontSize: 18 }}>🛒</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
+              </View>
             )}
           />
         </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal visible={showStores} animationType="slide" presentationStyle="pageSheet">
@@ -483,8 +499,11 @@ const styles = StyleSheet.create({
   createBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   listName: { fontSize: 18, fontWeight: '700', color: colors.ink },
-  itemCard: { backgroundColor: '#fff', borderRadius: 14, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  itemCard: { backgroundColor: '#fff', borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  itemCardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   itemName: { fontSize: 14, fontWeight: '600', color: colors.ink, marginBottom: 2 },
+  removeBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' },
+  removeBtnText: { color: '#EF4444', fontSize: 20, fontWeight: '700' },
   itemBrand: { fontSize: 12, color: colors.muted },
   itemSize: { fontSize: 11, color: '#CBD5E1', marginTop: 2 },
   qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -495,7 +514,7 @@ const styles = StyleSheet.create({
   calcBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   calcHint: { fontSize: 12, color: colors.muted, textAlign: 'center', marginBottom: 12 },
   addBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, backgroundColor: colors.bg, borderTopWidth: 1, borderTopColor: colors.border },
-  addBtn: { backgroundColor: '#fff', borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 2, borderColor: colors.primary },
+  addBtn: { backgroundColor: '#fff', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 20, alignItems: 'center', borderWidth: 2, borderColor: colors.primary, flexDirection: 'row', justifyContent: 'center', gap: 8 },
   addBtnText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
   resultWrap: { marginTop: 8 },
   sectionLabel: { fontSize: 11, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
@@ -527,6 +546,7 @@ const styles = StyleSheet.create({
   searchResultQty: { fontSize: 11, color: '#CBD5E1', marginTop: 2 },
   searchResultPrice: { fontSize: 16, fontWeight: '800', color: colors.primary },
   searchResultAdd: { fontSize: 12, color: colors.primary, fontWeight: '600', marginTop: 4 },
+  searchResultAddBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
   storeSelectAll: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, alignItems: 'center', marginBottom: 12 },
   storeSelectAllText: { color: colors.primary, fontWeight: '700' },
   storeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },

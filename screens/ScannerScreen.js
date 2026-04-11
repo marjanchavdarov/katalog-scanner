@@ -26,33 +26,44 @@ async function fetchProductImage(ean) {
   } catch { return null; }
 }
 
+const STORE_DISPLAY = {
+  lidl: 'Lidl', konzum: 'Konzum', kaufland: 'Kaufland', spar: 'Spar',
+  studenac: 'Studenac', tommy: 'Tommy', plodine: 'Plodine', eurospin: 'Eurospin',
+  dm: 'dm', ktc: 'KTC', metro: 'Metro', ntl: 'NTL', ribola: 'Ribola',
+  roto: 'Roto', trgocentar: 'Trgocentar', brodokomerc: 'Brodokomerc',
+  lorenco: 'Lorenco', boso: 'Boso', vrutak: 'Vrutak', zabac: 'Žabac',
+  jadrankatrgovina: 'Jadranka', trgovinakrk: 'Trg. Krk',
+  djelovodice: 'Djelo Vodice', branka: 'Branka', gavranovic: 'Gavranović',
+};
+
+const LOGO_MAP = {
+  lidl: require('../assets/logos/lidl.png'),
+  konzum: require('../assets/logos/konzum.png'),
+  kaufland: require('../assets/logos/kaufland.png'),
+  spar: require('../assets/logos/spar.png'),
+  studenac: require('../assets/logos/studenac.png'),
+  tommy: require('../assets/logos/tommy.png'),
+  plodine: require('../assets/logos/plodine.png'),
+  eurospin: require('../assets/logos/eurospin.png'),
+  dm: require('../assets/logos/dm.png'),
+  ktc: require('../assets/logos/ktc.png'),
+  metro: require('../assets/logos/metro.png'),
+  ntl: require('../assets/logos/ntl.png'),
+  ribola: require('../assets/logos/ribola.png'),
+  roto: require('../assets/logos/roto.png'),
+  trgocentar: require('../assets/logos/trgocentar.png'),
+  brodokomerc: require('../assets/logos/brodokomerc.png'),
+  lorenco: require('../assets/logos/lorenco.png'),
+  boso: require('../assets/logos/boso.png'),
+  vrutak: require('../assets/logos/vrutak.png'),
+  zabac: require('../assets/logos/zabac.png'),
+  jadrankatrgovina: require('../assets/logos/jadranka_trgovina.png'),
+  trgovinakrk: require('../assets/logos/trgovina_krk.png'),
+};
+
 function StoreBadge({ store, size = 48 }) {
-  const key = (store || '').toLowerCase().replace(/[\s_]+/g, '');
-  const logoMap = {
-    lidl: require('../assets/logos/lidl.png'),
-    konzum: require('../assets/logos/konzum.png'),
-    kaufland: require('../assets/logos/kaufland.png'),
-    spar: require('../assets/logos/spar.png'),
-    studenac: require('../assets/logos/studenac.png'),
-    tommy: require('../assets/logos/tommy.png'),
-    plodine: require('../assets/logos/plodine.png'),
-    eurospin: require('../assets/logos/eurospin.png'),
-    dm: require('../assets/logos/dm.png'),
-    ktc: require('../assets/logos/ktc.png'),
-    metro: require('../assets/logos/metro.png'),
-    ntl: require('../assets/logos/ntl.png'),
-    ribola: require('../assets/logos/ribola.png'),
-    roto: require('../assets/logos/roto.png'),
-    trgocentar: require('../assets/logos/trgocentar.png'),
-    brodokomerc: require('../assets/logos/brodokomerc.png'),
-    lorenco: require('../assets/logos/lorenco.png'),
-    boso: require('../assets/logos/boso.png'),
-    vrutak: require('../assets/logos/vrutak.png'),
-    zabac: require('../assets/logos/zabac.png'),
-    jadrankatrgovina: require('../assets/logos/jadranka_trgovina.png'),
-    trgovinakrk: require('../assets/logos/trgovina_krk.png'),
-  };
-  const logo = logoMap[key];
+  const key = (store || '').toLowerCase().replace(/[\s_\-]+/g, '');
+  const logo = LOGO_MAP[key];
   const bg = storeColors[key] || '#64748B';
   return (
     <View style={{
@@ -117,7 +128,7 @@ function PriceRow({ item, index, maxPrice }) {
       <View style={styles.priceRowMid}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 7 }}>
           <Text style={[styles.priceStoreName, isCheap && { color: colors.success }]}>
-            {(item.store || '').toUpperCase()}
+            {STORE_DISPLAY[(item.store || '').toLowerCase().replace(/[\s_\-]+/g, '')] || (item.store || '').replace(/_/g, ' ').replace(/-/g, ' ').toUpperCase()}
           </Text>
           {isCheap && <Text style={{ fontSize: 15 }}>🏆</Text>}
         </View>
@@ -193,7 +204,8 @@ export default function ScannerScreen() {
       setSaved(saved_.some(s => s.barcode === data));
       const lists_ = JSON.parse(await AsyncStorage.getItem('shopping_lists') || '[]');
       setAllLists(lists_);
-      fetchProductImage(data).then(url => { if (url) setProductImage(url); });
+      if (json.image_url) setProductImage(json.image_url);
+      else fetchProductImage(data).then(url => { if (url) setProductImage(url); });
     } catch {
       setResult({ barcode: data, name: 'Ups, nešto nije štimalo', prices: [] });
     } finally { setLoading(false); }
@@ -217,7 +229,8 @@ export default function ScannerScreen() {
         Animated.timing(headerAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
         Animated.timing(bannerAnim, { toValue: 1, duration: 500, easing: Easing.out(Easing.back(1.5)), useNativeDriver: true }),
       ]).start();
-      fetchProductImage(ean).then(url => { if (url) setProductImage(url); });
+      if (json.image_url) setProductImage(json.image_url);
+      else fetchProductImage(ean).then(url => { if (url) setProductImage(url); });
     } catch {
       setResult({ barcode: ean, name: name || 'Greška', prices: [] });
     } finally { setLoading(false); }
@@ -349,15 +362,20 @@ export default function ScannerScreen() {
 
         {/* Camera */}
         {!showSearch && (
-          <View style={styles.cameraWrap}>
-            <CameraView
-              style={StyleSheet.absoluteFill}
-              onBarcodeScanned={handleScan}
-              barcodeScannerSettings={{ barcodeTypes: ['ean13','ean8','upc_a','upc_e'] }}
-            />
-            <View style={styles.cameraOverlay}>
-              <ScanFrame />
-              <Text style={styles.scanHint}>Usmjeri na barkod</Text>
+          <View style={{ flex: 1, position: 'relative' }}>
+            <View style={styles.cameraWrap}>
+              <CameraView
+                style={StyleSheet.absoluteFill}
+                onBarcodeScanned={handleScan}
+                barcodeScannerSettings={{ barcodeTypes: ['ean13','ean8','upc_a','upc_e'] }}
+              />
+              <View style={styles.cameraOverlay}>
+                <ScanFrame />
+                <Text style={styles.scanHint}>Usmjeri na barkod</Text>
+              </View>
+            </View>
+            <View style={styles.stedkoBubble}>
+              <Image source={require('../assets/stedko-scan.png')} style={styles.stedkoFloat} />
             </View>
           </View>
         )}
@@ -409,7 +427,8 @@ export default function ScannerScreen() {
                     <Text style={{ fontSize: 28 }}>{saved ? '❤️' : '🤍'}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={addToList} style={styles.addListBtn}>
-                    <Text style={styles.addListBtnText}>+ Popis</Text>
+                    <Text style={{ fontSize: 20 }}>🛒</Text>
+                    <Text style={styles.addListBtnText}>Popis</Text>
                   </TouchableOpacity>
                 </View>
               </Animated.View>
@@ -513,8 +532,8 @@ const styles = StyleSheet.create({
   productBrand: { fontSize: 12, color: colors.muted, marginBottom: 2 },
   productQty: { fontSize: 12, color: colors.muted, marginBottom: 4 },
   productBarcode: { fontSize: 11, color: '#CBD5E1' },
-  addListBtn: { backgroundColor: colors.primaryLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
-  addListBtnText: { fontSize: 12, color: colors.primaryDark, fontWeight: '700' },
+  addListBtn: { backgroundColor: colors.primaryLight, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, alignItems: "center", gap: 2 },
+  addListBtnText: { fontSize: 10, color: colors.primaryDark, fontWeight: '800' },
   savingsBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ECFDF5', borderRadius: 16, padding: 14, marginBottom: 14, borderWidth: 1.5, borderColor: colors.success + '50', gap: 12 },
   stedkoBannerImg: { width: 52, height: 52 },
   savingsText: { flex: 1, fontSize: 14, color: '#065F46', fontWeight: '600', lineHeight: 20 },
@@ -528,6 +547,14 @@ const styles = StyleSheet.create({
   barFill: { height: 5, borderRadius: 3 },
   priceValue: { fontSize: 22, fontWeight: '900', color: colors.ink },
   priceOld: { fontSize: 12, color: colors.muted, textDecorationLine: 'line-through' },
+  stedkoBubble: { position: 'absolute', bottom: 16, right: 12, flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  stedkoBubbleText: { backgroundColor: '#fff', borderRadius: 14, borderBottomRightRadius: 2, padding: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 6 },
+  stedkoBubbleLabel: { fontSize: 13, fontWeight: '800', color: colors.ink, textAlign: 'center' },
+  stedkoFloat: { width: 160, height: 160 },
+  stedkoBubble: { position: 'absolute', bottom: 16, right: 12, flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  stedkoBubbleText: { backgroundColor: '#fff', borderRadius: 14, borderBottomRightRadius: 2, padding: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 6 },
+  stedkoBubbleLabel: { fontSize: 13, fontWeight: '800', color: colors.ink, textAlign: 'center' },
+  stedkoFloat: { width: 160, height: 160 },
   scanAgainBtn: { marginTop: 20, backgroundColor: colors.primary, borderRadius: 16, padding: 18, alignItems: 'center' },
   scanAgainText: { color: '#fff', fontWeight: '800', fontSize: 16 },
 });
