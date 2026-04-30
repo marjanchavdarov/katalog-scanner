@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { colors, storeColors } from '../theme';
 
 const API = 'https://botapp-u7qa.onrender.com';
 
-export default function EquivalentsScreen({ barcode, onClose }) {
+export default function EquivalentsScreen({ barcode }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -12,11 +12,9 @@ export default function EquivalentsScreen({ barcode, onClose }) {
     setLoading(true);
     try {
       const r = await fetch(`${API}/api/equivalents/${barcode}`);
-      const json = await r.json();
-      setData(json);
-    } catch (e) {} finally {
-      setLoading(false);
-    }
+      setData(await r.json());
+    } catch {}
+    finally { setLoading(false); }
   }
 
   if (!data && !loading) return (
@@ -65,12 +63,7 @@ export default function EquivalentsScreen({ barcode, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  trigger: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 10, padding: 12,
-    marginTop: 8, alignItems: 'center',
-    borderWidth: 1, borderColor: colors.primary + '30',
-  },
+  trigger: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginTop: 8, alignItems: 'center', borderWidth: 1, borderColor: colors.primary + '30' },
   triggerText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   loading: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
   loadText: { color: colors.muted, fontSize: 13 },
@@ -78,11 +71,7 @@ const styles = StyleSheet.create({
   emptyText: { color: colors.muted, fontSize: 13 },
   wrap: { marginTop: 8 },
   title: { fontSize: 12, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
-  row: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 10, padding: 10,
-    marginBottom: 6, borderWidth: 1, borderColor: colors.border,
-  },
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 10, marginBottom: 6, borderWidth: 1, borderColor: colors.border },
   rowScanned: { borderColor: colors.primary + '60', backgroundColor: colors.primaryLight },
   rowBest: { borderColor: '#10B981', backgroundColor: '#F0FDF4' },
   badge: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center', marginRight: 10 },

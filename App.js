@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Text, View, ActivityIndicator, StyleSheet, Image, Platform, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScannerScreen from './screens/ScannerScreen';
 import MojPopisScreen from './screens/MojPopisScreen';
@@ -41,6 +41,14 @@ const PRELOAD_ASSETS = [
   require('./assets/logos/trgovina_krk.png'),
 ];
 
+function AppHeader() {
+  return (
+    <View style={styles.appHeader}>
+      <Image source={require('./assets/icon.png')} style={styles.appHeaderLogo} />
+    </View>
+  );
+}
+
 function ScanButton() {
   return (
     <View style={styles.scanBtn}>
@@ -71,6 +79,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
+      <AppHeader />
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
@@ -139,6 +148,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     marginTop: 0,
+  },
+  appHeader: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 44,
+    height: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 52 : 96,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
+  appHeaderLogo: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
   },
   scanBtn: {
     width: 56, height: 56, borderRadius: 28,

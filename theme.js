@@ -33,5 +33,5 @@ export const storeColors = {
   studenac: '#FF6B00',
   zabac: '#00AA44',
   jadrankatrgovina: '#004B8D',
-  trgovinakrek: '#555555',
+  trgovinakrk: '#555555',
 };
